@@ -1,0 +1,13 @@
+# requirements.txt
+os
+re
+pint
+logging
+numpy
+pandas
+scipy
+matplotlib
+scikit-learn
+sklearn
+PyQt5
+PyQtWebEngine
