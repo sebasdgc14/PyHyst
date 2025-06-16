@@ -86,7 +86,7 @@ PyHyst/
 2. CSV File: Contains corrected and processed data for further analysis.
 
 ## Citing PyHyst
-Sebastian Diaz Granados Cano, PyHyst: Python Magnetic Hysteresis Analysis Toolkit, (2025).
+Sebastian Diaz Granados Cano, et al. PyHyst: Python Magnetic Hysteresis Analysis Toolkit, (2025).
 https://github.com/sebasdgc14/PyHyst
 
 ## License
