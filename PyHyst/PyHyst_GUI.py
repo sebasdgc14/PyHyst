@@ -265,13 +265,13 @@ class PyHystGUI(qtw.QWidget):
         fit_layout = qtw.QVBoxLayout()
         fit_mode_row = qtw.QHBoxLayout()
         self.fit_mode_dropdown = qtw.QComboBox()
-        self.fit_mode_dropdown.addItems(["Single", "Multi", "Diego", "Custom"])
+        self.fit_mode_dropdown.addItems(["Single", "Multi", "Duhalde", "Custom"])
         fit_info = qtw.QToolButton()
         fit_info.setIcon(self.style().standardIcon(qtw.QStyle.SP_MessageBoxInformation))
         fit_info.setToolTip(
             "Single: Fits Mih/Mrh with a single function (logistic/tanh).\n"
             "Multi: Uses a basis set for more flexible fitting.\n"
-            "Diego: Uses Diego's arctan model.\n"
+            "Duhalde: Uses Duhalde's arctan model.\n"
             "Custom: User provides a function and initial guesses."
         )
         fit_mode_row.addWidget(qtw.QLabel("Fitting mode:"))
@@ -279,9 +279,9 @@ class PyHystGUI(qtw.QWidget):
         fit_mode_row.addWidget(fit_info)
         fit_layout.addLayout(fit_mode_row)
 
-        # Diego fitting parameter guesses
-        self.diego_guess_input = qtw.QLineEdit()
-        self.diego_guess_input.setPlaceholderText("Diego initial guesses (comma-separated, e.g. 1.0, 0.1, 0.01) in this order: Hc, Mr, Chi")
+        # Duhalde fitting parameter guesses
+        self.Duhalde_guess_input = qtw.QLineEdit()
+        self.Duhalde_guess_input.setPlaceholderText("Duhalde initial guesses (comma-separated, e.g. 1.0, 0.1, 0.01) in this order: Hc, Mr, Chi")
 
         # Upper branch function and guesses
         self.custom_func_up_input = qtw.QLineEdit()
@@ -299,7 +299,7 @@ class PyHystGUI(qtw.QWidget):
         fit_layout.addWidget(self.custom_guess_up_input)
         fit_layout.addWidget(self.custom_func_lo_input)
         fit_layout.addWidget(self.custom_guess_lo_input)
-        fit_layout.addWidget(self.diego_guess_input)
+        fit_layout.addWidget(self.Duhalde_guess_input)
 
         self.fit_button = qtw.QPushButton("Fit Data")
         self.fit_button.setToolTip("Run the selected fitting method on the current data.")
@@ -544,15 +544,15 @@ class PyHystGUI(qtw.QWidget):
         guess_up = [float(val.strip()) for val in self.custom_guess_up_input.text().split(',')] if self.custom_guess_up_input.text() else None
         func_lo = self.custom_func_lo_input.text()
         guess_lo = [float(val.strip()) for val in self.custom_guess_lo_input.text().split(',')] if self.custom_guess_lo_input.text() else None
-        guess_diego = [float(val.strip()) for val in self.diego_guess_input.text.split(',')] if self.diego_guess_input.text() else None
+        guess_Duhalde = [float(val.strip()) for val in self.Duhalde_guess_input.text().split(',')] if self.Duhalde_guess_input.text() else None
 
         try:
-            if fit_mode == "Diego":
+            if fit_mode == "Duhalde":
                 # Instantiate the fitting class
                 self.fitting_instance = Fitting(
                     self.data_instance,
                     mode=fit_mode,
-                    guess_diego=guess_diego)
+                    guess_Duhalde=guess_Duhalde)
             elif fit_mode == "Custom":
                 # Instantiate the fitting class with custom functions and guesses
                 self.fitting_instance = Fitting(
@@ -878,7 +878,7 @@ class PyHystGUI(qtw.QWidget):
         self.custom_guess_up_input.clear()
         self.custom_func_lo_input.clear()
         self.custom_guess_lo_input.clear()
-        self.diego_guess_input.clear()
+        self.Duhalde_guess_input.clear()
 
         # Reset dropdowns to first item
         self.vol_unit_input.setCurrentIndex(0)

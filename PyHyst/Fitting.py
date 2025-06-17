@@ -15,7 +15,7 @@ class Fitting:
   It supports single-function fitting, multi-basis adaptive fitting, and user-defined fitting strategies for Mih and Mrh components of hysteresis curves.
   The class integrates logistic, tanh, and sech² functions and facilitates interactive parameter estimation, visualization, and performance comparison between fitting models.
   """
-  def __init__(self, Sample, mode, func_up=None, guess_up=None, func_lo=None, guess_lo=None, guess_diego=None):
+  def __init__(self, Sample, mode, func_up=None, guess_up=None, func_lo=None, guess_lo=None, guess_Duhalde=None):
     """
     Initializes the Fitting class with a sample object containing magnetic hysteresis data and begins the fitting process by invoking the interactive method selection prompt.
     """
@@ -27,11 +27,11 @@ class Fitting:
     self.guess_up = guess_up if guess_up else None
     self.func_lo = func_lo if func_lo else None
     self.guess_lo = guess_lo if guess_lo else None
-    self.guess_diego = guess_diego if guess_diego else None
+    self.guess_Duhalde = guess_Duhalde if guess_Duhalde else None
     # Start the fitting process
     if   self.mode == 'Single': self.Single_Fit()
     elif self.mode == 'Multi': self.Multi_Fit()
-    elif self.mode == 'Diego': self.Diego()
+    elif self.mode == 'Duhalde': self.Duhalde()
     elif self.mode == 'Custom': self.Custom_Fit()
     else: pass
 
@@ -201,12 +201,12 @@ class Fitting:
     adj_r2 = 1 - (1 - r2) * (n - 1) / (n - p - 1)
     return r2, adj_r2
   ##############################################################################################################################################################################
-  # Diego function fitting
+  # Duhalde function fitting
   @staticmethod
-  def UpperDiego(H, Ms, Hc, Mr, Chi):
+  def UpperDuhalde(H, Ms, Hc, Mr, Chi):
     return (2 * Ms / np.pi) * np.arctan(((H + Hc) / Hc) * np.tan(np.pi * Mr / (2 * Ms))) + Chi * H
   @staticmethod
-  def LowerDiego(H, Ms, Hc, Mr, Chi):
+  def LowerDuhalde(H, Ms, Hc, Mr, Chi):
       return (2 * Ms / np.pi) * np.arctan(((H - Hc) / Hc) * np.tan(np.pi * Mr / (2 * Ms))) + Chi * H
   ##############################################################################################################################################################################
   # Parameter estimation through cubic splines
@@ -386,20 +386,23 @@ class Fitting:
     self.Parameter_Extraction()
 
   ##############################################################################################################################################################################
-  def Diego(self):
+  def Duhalde(self):
     """
-    PlaceHolder name and description
+    Function as first described by:
+    S. Duhalde, M. F. Vignolo, F. Golmar, C. Chiliotte, C. E. Rodriguez Torres, L. A. Errico,
+    A. F. Cabrera, M. Renteria, F. H. Sanchez, and M. Weissmann. Appearance of room-
+    temperature ferromagnetism in cu-doped tio2δ films. Physical Review B, 72:161313, 2005
     """
     Ms = self.Sam.Data[self.Sam.MagHead].max()
-    pfitup, _ = curve_fit(Fitting.UpperDiego, self.Sam.Up[self.Sam.FieldHead], self.Sam.Up[self.Sam.MagHead], p0=[Ms, self.guess_diego[0], self.guess_diego[1], self.guess_diego[2]])
-    pfitlo, _ = curve_fit(Fitting.LowerDiego, self.Sam.Lo[self.Sam.FieldHead], self.Sam.Lo[self.Sam.MagHead], p0=[Ms, self.guess_diego[0], self.guess_diego[1], self.guess_diego[2]])
+    pfitup, _ = curve_fit(Fitting.UpperDuhalde, self.Sam.Up[self.Sam.FieldHead], self.Sam.Up[self.Sam.MagHead], p0=[Ms, self.guess_Duhalde[0], self.guess_Duhalde[1], self.guess_Duhalde[2]])
+    pfitlo, _ = curve_fit(Fitting.LowerDuhalde, self.Sam.Lo[self.Sam.FieldHead], self.Sam.Lo[self.Sam.MagHead], p0=[Ms, self.guess_Duhalde[0], self.guess_Duhalde[1], self.guess_Duhalde[2]])
     Ms_Up, Ms_Lo = pfitup[0], pfitlo[0]
     Mr_Up, Mr_Lo = pfitup[2], pfitlo[2]
     Hc_Up, Hc_Lo = pfitup[1], pfitlo[1]
     Chi = pfitup[3]
     # Adding fit to sample attribute
-    self.Sam.Up['Fit'] = Fitting.UpperDiego(self.Sam.Up[self.Sam.FieldHead], *pfitup)
-    self.Sam.Lo['Fit'] = Fitting.LowerDiego(self.Sam.Lo[self.Sam.FieldHead], *pfitlo)
+    self.Sam.Up['Fit'] = Fitting.UpperDuhalde(self.Sam.Up[self.Sam.FieldHead], *pfitup)
+    self.Sam.Lo['Fit'] = Fitting.LowerDuhalde(self.Sam.Lo[self.Sam.FieldHead], *pfitlo)
     # Update Data
     self.Sam.Data = Update_Data(self.Sam.Up, self.Sam.Lo)
     ### Parameters
