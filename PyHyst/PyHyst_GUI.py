@@ -234,19 +234,37 @@ class PyHystGUI(qtw.QWidget):
         drift_info.setToolTip("If 'Auto' is selected, the program will determine the best method based on the data.\n"
                               "If 'Symmetric' is selected, symmetric averaging with tip-to-tip closure is applied.\n"
                               "If 'Positive' is selected, positive field correction is applied.\n"
-                              "If 'Upper' is selected, the upper branch is used for correction.\n"
+                              "If 'Upper' is selected, the upper branch is used for correction. While this guarantees loop centering, it may introduce artificial symmetry and should therefore be used with caution.\n"
                               "If 'None' is selected, no drift correction is applied.\n")
         drift_layout.addWidget(drift_info)
         drift_layout.addStretch()
         corrections.addLayout(drift_layout)
 
         # Slope saturation checkbox
+        #slope_layout = qtw.QHBoxLayout()
+        #self.slope_correction_checkbox = qtw.QCheckBox("Slope Correction")
+        #slope_info = qtw.QToolButton()
+        #slope_info.setIcon(self.style().standardIcon(qtw.QStyle.SP_MessageBoxInformation))
+        #slope_info.setToolTip("Apply slope correction to the data based on the approach to saturation model.\nThis method is to be used ONLY when the ferromagnetic material is saturated and the linear contribution is mainly due to Dia or Para magnetism.\n")
+        #slope_layout.addWidget(self.slope_correction_checkbox)
+        #slope_layout.addWidget(slope_info)
+        #slope_layout.addStretch()
+        #corrections.addLayout(slope_layout)
+
+        # Slope correction dropdown
+        self.slope_correction_dropdown = qtw.QComboBox()
+        self.slope_correction_dropdown.addItems(["None", "Linear", "Approach"])  # Add more methods as needed
         slope_layout = qtw.QHBoxLayout()
-        self.slope_correction_checkbox = qtw.QCheckBox("Slope Correction")
+        slope_layout.addWidget(qtw.QLabel("Slope Correction:"))
+        slope_layout.addWidget(self.slope_correction_dropdown)
         slope_info = qtw.QToolButton()
         slope_info.setIcon(self.style().standardIcon(qtw.QStyle.SP_MessageBoxInformation))
-        slope_info.setToolTip("Apply slope correction to the data based on the approach to saturation model.\nThis method is to be used ONLY when the ferromagnetic material is saturated and the linear contribution is mainly due to Dia or Para magnetism.\n")
-        slope_layout.addWidget(self.slope_correction_checkbox)
+        slope_info.setToolTip(
+            "Select the slope correction method:\n"
+            "'None': No correction.\n"
+            "'Linear': Fit and subtract a linear function above 80% saturation.\n"
+            "'Approach': Use the approach to saturation model (Jackson & Solheid Eq. 18).\n"
+        )
         slope_layout.addWidget(slope_info)
         slope_layout.addStretch()
         corrections.addLayout(slope_layout)
@@ -281,7 +299,7 @@ class PyHystGUI(qtw.QWidget):
 
         # Duhalde fitting parameter guesses
         self.Duhalde_guess_input = qtw.QLineEdit()
-        self.Duhalde_guess_input.setPlaceholderText("Duhalde initial guesses (comma-separated, e.g. 1.0, 0.1, 0.01) in this order: Hc, Mr, Chi")
+        self.Duhalde_guess_input.setPlaceholderText("Duhalde initial guesses (e.g. 1.0, 0.1, 0.01) in this order: Hc, Mr, Chi")
 
         # Upper branch function and guesses
         self.custom_func_up_input = qtw.QLineEdit()
@@ -529,8 +547,11 @@ class PyHystGUI(qtw.QWidget):
             Drift_Correction(self.data_instance, Mode=drift_method)
 
         # Apply slope correction
-        if self.slope_correction_checkbox.isChecked():
-            Slope_Correction(self.data_instance, Apply=True)
+        slope_method = self.slope_correction_dropdown.currentText()
+        if slope_method != "None":
+            Slope_Correction(self.data_instance, method=slope_method)
+        #if self.slope_correction_checkbox.isChecked():
+        #    Slope_Correction(self.data_instance, Apply=True)
 
         self.Plot_Corrections()
 
@@ -892,11 +913,11 @@ class PyHystGUI(qtw.QWidget):
         self.method_dropdown.setCurrentIndex(0)
         self.fit_mode_dropdown.setCurrentIndex(0)
         self.drift_correction_dropdown.setCurrentIndex(0)
+        self.slope_correction_dropdown.setCurrentIndex(0)
 
         # Reset checkboxes
         self.center_shift_checkbox.setChecked(False)
-        self.slope_correction_checkbox.setChecked(False)
-
+        
         # Reset labels
         self.vol_label.setText("N/A")
         self.mass_label.setText("N/A")
@@ -925,5 +946,8 @@ class PyHystGUI(qtw.QWidget):
 
 if __name__ == "__main__":
     app = qtw.QApplication([])
+    font = qtg.QFont()
+    font.setPointSize(8)
+    app.setFont(font)
     mw = PyHystGUI()
     app.exec_()

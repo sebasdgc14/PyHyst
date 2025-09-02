@@ -35,7 +35,7 @@ class Slope_Correction:
   plot_callback : callable or None
       Optional plot callback for rendering results (instead of plt.show()).
   """
-  def __init__(self, Sample, Apply):
+  def __init__(self, Sample, method):
     """
     Initialize slope correction with the given sample and apply if specified.
 
@@ -51,9 +51,11 @@ class Slope_Correction:
         Function to handle plotting (e.g., embedded matplotlib widget).
     """
     self.Sam  = Sample
-    self.App  = Apply
+    self.method = method
 
-    if self.App is True: self.Approach_Saturation()
+    if self.method   == 'None'  : logger.info("Slope correction skipped (mode: None)")
+    elif self.method == 'Approach': self.Approach_Saturation()
+    elif self.method == 'Linear'  : self.Linear_Saturation()
 
   ##############################################################################################################################################################################
   @staticmethod
@@ -134,3 +136,49 @@ class Slope_Correction:
     # Set saturation as determined by fit
     setattr(self.Sam, 'Ms', params[1])
     logger.info("Slope correction applied. Saturation magnetization set.")
+
+  ##############################################################################################################################################################################
+  def Linear_Saturation(self):
+    """
+    Applies linear slope correction to both upper and lower branches of the hysteresis loop.
+
+    High-field positive values from the upper branch are fitted to estimate the slope (χ). 
+    This slope is subtracted from both branches, and dependencies are updated accordingly.
+    """
+    # Extract upper branch data
+    H_up = self.Sam.Up[self.Sam.FieldHead]
+    M_up = self.Sam.Up[self.Sam.MagHead]
+    # Extract lower branch data
+    H_lo = self.Sam.Lo[self.Sam.FieldHead]
+    M_lo = self.Sam.Lo[self.Sam.MagHead]
+
+    # Step 1: Select high-field positive part (≥80% of max field)
+    mask_hf_up = H_up >= 0.8 * H_up.max()
+    H_hf_up = H_up[mask_hf_up]
+    M_hf_up = M_up[mask_hf_up]
+
+    # Fit linear function to high-field region
+    params_up = np.polyfit(H_hf_up, M_hf_up, 1)  # [slope, intercept]
+
+    # Subtract linear contribution from magnetization
+    M_up_corrected = M_up - params_up[0]*H_up
+    M_lo_corrected = M_lo - params_up[0]*H_lo
+
+    # Update upper branch dependencies
+    self.Sam.Up[self.Sam.FieldHead] = H_up
+    self.Sam.Up[self.Sam.MagHead]   = M_up_corrected
+    self.Sam.Up[self.Sam.MomHead]   = Update_Moment(M_up_corrected, self.Sam.Vol, self.Sam.Mass)
+
+    # Update lower branch dependencies
+    self.Sam.Lo[self.Sam.FieldHead] = H_lo
+    self.Sam.Lo[self.Sam.MagHead]   = M_lo_corrected
+    self.Sam.Lo[self.Sam.MomHead]   = Update_Moment(M_lo_corrected, self.Sam.Vol, self.Sam.Mass)
+
+    # Update main structures
+    self.Sam.Data = Update_Data(self.Sam.Up, self.Sam.Lo)
+    self.Sam.Aux  = Update_Aux(self.Sam.Up, self.Sam.Lo, self.Sam.FieldHead, self.Sam.MagHead)
+    self.Sam.Err  = Update_ErrorCurve(self.Sam.Up[self.Sam.FieldHead], self.Sam.Up[self.Sam.MagHead], self.Sam.Lo[self.Sam.MagHead], self.Sam.FieldHead, self.Sam.MagHead)
+
+    # Set saturation as determined by fit (from upper branch)
+    setattr(self.Sam, 'Ms', params_up[1])
+    logger.info("Linear slope correction applied only to high-field region. Saturation magnetization set.")
