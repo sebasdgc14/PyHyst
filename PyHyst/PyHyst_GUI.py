@@ -790,8 +790,9 @@ class PyHystGUI(qtw.QWidget):
         drift_method = self.drift_correction_dropdown.currentText()
         if drift_method != "None":
             corrections_applied.append(f"Drift Correction ({drift_method})")
-        if self.slope_correction_checkbox.isChecked():
-            corrections_applied.append("Slope Correction")
+        slope_method = self.slope_correction_dropdown.currentText()
+        if slope_method != "None":
+            corrections_applied.append(f"Slope Correction ({slope_method})")
         if not corrections_applied:
             corrections_applied.append("None")
 
