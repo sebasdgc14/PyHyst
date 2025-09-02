@@ -2,3 +2,8 @@ venv/
 env/
 __pycache__/
 *.pyc
+
+# PyInstaller build folders
+dist/
+build/
+*.spec
