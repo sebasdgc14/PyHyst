@@ -2,6 +2,7 @@ venv/
 env/
 __pycache__/
 *.pyc
+Dockerfile
 
 # PyInstaller build folders
 dist/
